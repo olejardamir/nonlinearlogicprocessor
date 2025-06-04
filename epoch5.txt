@@ -1,103 +1,121 @@
-In this epoch, the primary innovation is a shift toward general-purpose, energy-efficient computing platforms suitable for home-scale systems. This is achieved by adopting photon-free, thermally efficient materials capable of both logic processing and memory storage within a unified physical framework, fully eliminating dependence on CMOS technology.
+Main Dynamic Equation (First-Order, Stable, Directional, Passive-Core with Minimal Active Support, Noise-Robust):
 
-Governing Dynamics (Logic + Memory)
-  d²u/dt² − v²·d²u/dx² + γ·du/dt + μ·u³ = η·N(u₁, ..., u_N) + λ·u(x, t − τ) + ξ(x, t)
+    tau * du/dt - v * du/dx + gamma * (u - u^3) + kappa * tanh(u - u_hat) + beta * tanh(u_hat - u_hat_delayed) = eta * S(u1, u2) + xi(x, t)
 
-The nonlinear PDE governs the spatiotemporal evolution of signals within the material.
+Where:
+    u(x, t) is the normalized logic state field in [-1, 1], representing bistable digital states.
+    u_hat(x, t) is a smoothed memory trace of u.
+    u_hat_delayed(x, t) is a time-lagged version of u_hat.
+    (u - u^3) creates passive double-well convergence.
+    tanh(u - u_hat) provides memory-trace alignment with soft dynamics.
+    tanh(u_hat - u_hat_delayed) introduces directional drift with bounded energy.
+    Each term is compatible with passive dynamics, with optional low-power active biasing where needed.
 
-Time-delayed feedback (λ·u(x, t − τ)) replaces the global clock, implementing asynchronous sequencing.
+Bounded Memory Trace and Lag Filter:
 
-ξ(x, t) provides external programmatic control via voltage or magnetic pulses.
+    tau1 * du_hat/dt = -u_hat + tanh(u / epsilon)
+    tau2 * du_hat_delayed/dt = -u_hat_delayed + u_hat
 
-Activation and Thresholding (Physical, Bistable)
-  L(F) = bistable_snap(F)
-   → Implemented using ferroelectric polarization switching, not sigmoid approximations.
+Where:
+    u_hat softly follows u, limited by saturation.
+    u_hat_delayed implements a basic time delay.
+    tau1, tau2, and epsilon are material-dependent and tunable.
 
-Unlike analog soft logic, bistability provides reliable digital outputs (0 or 1).
+Soft Logic Source Term:
 
-No comparators are needed; thresholding is intrinsic to the material state.
+    S(u1, u2) = Q(L(u1), L(u2))
+    L(F) = 0.5 * (1 + F / sqrt(F^2 + delta^2))
+    Q(A, B) = exp(-(A - B)^2 / delta^2)
 
-Logic Realization via Physical States
-Nonlinear term enables native logic computation:
+Where:
+    L(F) maps inputs to [0, 1] range smoothly.
+    Q(A, B) behaves like XNOR for soft inputs, tunable via delta.
 
-  N(u₁, ..., u_N) ≈
-   Σᵢ αᵢ·L(uᵢ) − Σ_{i<j} β_{ij}·L(uᵢ)·L(uⱼ)
+Logic Gates:
 
-Logic Gates (using bistable L(F)):
+    NOT:    1 - L(F)
+    AND:    L(u1) * L(u2)
+    XNOR:   Q(L(u1), L(u2))
+    OR_n:   1 - Product[i=1 to n] (1 - L(alpha_i * u_i))
+    MAJ_n:  L((1/n) * Sum[i=1 to n] L(alpha_i * u_i) - 0.5)
 
-NOT:    1 − L(u₁)
+Note:
+    All logic assumes asynchronous updates with gating to prevent instability.
+    Feedback dampening or update masking may be required to avoid race conditions.
 
-AND:    L(u₁) · L(u₂)
+Reprogramming and Initialization Field:
 
-XOR:    L(u₁) + L(u₂) − 2·L(u₁)·L(u₂)
+    xi(x, t) = Theta(u) * G(u) * P_local(u) + R(x) * (1 - u^2)
 
-OR (N-input): 1 − ∏₁ⁿ(1 − L(αᵢ·uᵢ))
+Where:
+    Theta(u) = 1 / (1 + (du/dt)^2 / epsilon^2) suppresses updates away from equilibrium.
+    G(u) = 1 - u^2 restricts updates near attractors.
+    P_local(u) is a gated update signal activated by local energy thresholds.
+    R(x) seeds initial patterns.
 
-All gates retain internal state unless externally reset—combining logic and memory physically.
+Material Platform (Passive-Core, Active-Assist):
 
-Elimination of Global Clock (Time-as-Logic)
-λ·u(x, t − τ) enables asynchronous logic chaining via delay dynamics, not edge-triggered clocks.
+Ferroelectric Logic Plane:
+    Material: HfZrOx
+    Function: Polarization-based bistable state retention.
 
-Pulsed local domains act as event-driven logic zones, reducing power and complexity.
+Memristive Interconnect Plane:
+    Material: Doped HfOx
+    Function: Programmable resistance and coupling.
 
-Core Platforms and Materials (No CMOS)
-Platform: Ferroelectric FET (FeFET) Arrays
+Temporal Memory Plane:
+    Material: Relaxor ferroelectric or magnetoelectric oxide
+    Function: Time smoothing, optional active refresh.
 
-Materials: HfZrOx
+Note:
+    Auxiliary active biasing may be used for sensing, thresholding, or refresh.
 
-Function: Binary logic, intrinsic thresholding, fast switching, no leakage
+Layered Architecture:
 
-Role: Gate-level computation (replacing transistors)
+    - Vertically stacked oxide/polymer layers
+    - Thermal isolation with low-k spacing
+    - Defined overlap zones for interaction
+    - Crosstalk reduced via shielding
 
-Platform: Memristive Crossbar Fabric
+Fabrication Strategy:
 
-Materials: HfOx, TiOx
+    - Additive patterning with relaxed resolution
+    - Functional overlap defines behavior
+    - Minimal doping accuracy required
+    - Compatible with BEOL processing
+    - Error tolerance via field attractor dynamics
 
-Function: Programmable weights, nonvolatile storage, dynamic routing
+Performance Targets:
 
-Role: Interconnect and logic-memory integration
+    Switching Speed:     10-50 MHz (asynchronous)
+    Static Power:        Near zero
+    Dynamic Power:       < 1 pJ/event
+    Energy per Switch:   < 10 pJ
+    Signal Lifetime tau: 100-500 ns (adjustable)
+    Reprogram Window:    > tau2 for stability
 
-Platform: Spintronic Oscillator Grid
+Programming and Adaptation:
 
-Materials: Fe, Co, Ni
+    - u stored in ferroelectric domains
+    - u_hat, u_hat_delayed from relaxation dynamics
+    - P_local driven by local field thresholds
+    - Updates managed via:
+        * Local interactions
+        * Gated convergence
+        * Passive noise rejection
 
-Function: Delay lines, local time control, low-power sequencing
+Compiled PDE Logic Network:
 
-Role: Event timing, signal propagation
+    - Nodes: Logic states in distributed substrate
+    - Links: Interconnects with delay control
+    - Dynamics: Locally updated, convergent
+    - Inputs: Analog converted to bistable
+    - Directionality: From asymmetric delays
+    - Robustness: Resistant to noise/variations
+    - Readout: Non-destructive via sensing
 
-Programmability (Without Transistors)
-Memristors: Voltage-pulse training of resistance for analog/digital weights
+Final Remarks:
 
-Spintronics: Field/current switching of magnetic domains for state and propagation control
+    This system uses passive-dominant dynamics with minimal active control. Logic arises from field-driven convergence instead of clocked sequences. Memory and directionality are based on asymmetric delay and stable attractors.
 
-Ferroelectrics: Polarization set/reset via voltage pulses for logic assignment
-
-Programmability is local, dynamic, and CMOS-free—enabling reconfigurable computation akin to FPGAs.
-
-Performance and Integration
-Switching Speed:
-
-Up to 1 THz (spintronics, FeFETs)
-
-Sustained operation: 10–100 GHz with minimal thermal footprint
-
-Power Delivery:
-
-Pulsed power only, localized to active regions
-
-No static leakage, no continuous VDD rails
-
-Packaging:
-
-Fully CMOS-compatible at physical layer (e.g. wafer-bonded die stacks)
-
-Can integrate with or replace silicon-based interconnects
-
-Thermal Management
-Spintronics: Low to no Joule heating (no net charge flow)
-
-Memristors: Zero static power, brief write spikes
-
-Ferroelectrics: Minimal switching energy, passive retention
-
-Combined, the system achieves room-temperature sustained performance with drastically lower thermal load than CMOS.
+    Practical systems will likely need hybrid integration for sensing, refresh, and thresholding. The architecture supports scaling through modularity and tolerance to material variation.
